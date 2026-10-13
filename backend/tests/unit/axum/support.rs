@@ -14,7 +14,7 @@ use std::{
 };
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
-    net::UnixListener,
+    net::{UnixListener, UnixStream},
 };
 
 /// The identity of the Syncthing of the NAS, and of a computer.
@@ -85,6 +85,48 @@ pub async fn database() -> SqlitePool {
 
 type Requests = Arc<Mutex<Vec<(String, Value)>>>;
 
+async fn read_request(stream: &mut UnixStream) -> Option<(String, Value, String)> {
+    let mut raw = Vec::new();
+    let mut buffer = [0; 8192];
+    let (head, length) = loop {
+        let read = stream.read(&mut buffer).await.unwrap_or(0);
+        if read == 0 {
+            return None;
+        }
+        raw.extend_from_slice(&buffer[..read]);
+        if let Some(end) = raw.windows(4).position(|window| window == b"\r\n\r\n") {
+            let head = String::from_utf8_lossy(&raw[..end]).into_owned();
+            let length = head
+                .lines()
+                .find_map(|line| line.strip_prefix("Content-Length: "))
+                .and_then(|length| length.trim().parse::<usize>().ok())
+                .unwrap_or(0);
+            raw.drain(..end + 4);
+            break (head, length);
+        }
+    };
+    while raw.len() < length {
+        let read = stream.read(&mut buffer).await.unwrap_or(0);
+        if read == 0 {
+            break;
+        }
+        raw.extend_from_slice(&buffer[..read]);
+    }
+    let line = head
+        .lines()
+        .next()
+        .unwrap_or_default()
+        .trim_end_matches(" HTTP/1.1")
+        .to_owned();
+    let key = head
+        .lines()
+        .find_map(|line| line.strip_prefix("X-API-Key: "))
+        .unwrap_or_default()
+        .to_owned();
+    let body = serde_json::from_slice(&raw).unwrap_or(Value::Null);
+    Some((line, body, key))
+}
+
 /// Answers `request` on `socket`, for as long as the test runs, keeping every request.
 fn serve(
     socket: &Path,
@@ -101,44 +143,9 @@ fn serve(
             };
             let (requests, answer) = (Arc::clone(&requests), Arc::clone(&answer));
             tokio::spawn(async move {
-                let mut raw = Vec::new();
-                let mut buffer = [0; 8192];
-                let (head, length) = loop {
-                    let read = stream.read(&mut buffer).await.unwrap_or(0);
-                    if read == 0 {
-                        return;
-                    }
-                    raw.extend_from_slice(&buffer[..read]);
-                    if let Some(end) = raw.windows(4).position(|window| window == b"\r\n\r\n") {
-                        let head = String::from_utf8_lossy(&raw[..end]).into_owned();
-                        let length = head
-                            .lines()
-                            .find_map(|line| line.strip_prefix("Content-Length: "))
-                            .and_then(|length| length.trim().parse::<usize>().ok())
-                            .unwrap_or(0);
-                        raw.drain(..end + 4);
-                        break (head, length);
-                    }
+                let Some((line, body, key)) = read_request(&mut stream).await else {
+                    return;
                 };
-                while raw.len() < length {
-                    let read = stream.read(&mut buffer).await.unwrap_or(0);
-                    if read == 0 {
-                        break;
-                    }
-                    raw.extend_from_slice(&buffer[..read]);
-                }
-                let line = head
-                    .lines()
-                    .next()
-                    .unwrap_or_default()
-                    .trim_end_matches(" HTTP/1.1")
-                    .to_owned();
-                let key = head
-                    .lines()
-                    .find_map(|line| line.strip_prefix("X-API-Key: "))
-                    .unwrap_or_default()
-                    .to_owned();
-                let body: Value = serde_json::from_slice(&raw).unwrap_or(Value::Null);
                 let (status, reply) = answer(&line, &body, &key);
                 requests.lock().expect("requests").push((line, body));
                 let reply = if reply.is_null() {

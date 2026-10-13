@@ -45,27 +45,32 @@ const pending = ref<{
   path?: string;
   keep?: 'this' | 'other';
 } | null>(null);
-const confirmTitle = computed(() =>
-  pending.value?.kind === 'device'
-    ? t.value.revokeDeviceTitle
-    : pending.value?.kind === 'conflict'
-      ? t.value.conflictTitle
-      : t.value.revokeSyncTitle,
-);
-const confirmMessage = computed(() =>
-  pending.value?.kind === 'device'
-    ? t.value.revokeDeviceMessage
-    : pending.value?.kind === 'conflict'
-      ? t.value.conflictMessage
-      : t.value.revokeSyncMessage,
-);
-const confirmAction = computed(() =>
-  pending.value?.kind === 'conflict'
-    ? pending.value.keep === 'this'
-      ? t.value.keepThis
-      : t.value.keepOther
-    : t.value.revoke,
-);
+const confirmTitle = computed(() => {
+  switch (pending.value?.kind) {
+    case 'device':
+      return t.value.revokeDeviceTitle;
+    case 'conflict':
+      return t.value.conflictTitle;
+    default:
+      return t.value.revokeSyncTitle;
+  }
+});
+const confirmMessage = computed(() => {
+  switch (pending.value?.kind) {
+    case 'device':
+      return t.value.revokeDeviceMessage;
+    case 'conflict':
+      return t.value.conflictMessage;
+    default:
+      return t.value.revokeSyncMessage;
+  }
+});
+const confirmAction = computed(() => {
+  if (pending.value?.kind === 'conflict') {
+    return pending.value.keep === 'this' ? t.value.keepThis : t.value.keepOther;
+  }
+  return t.value.revoke;
+});
 const sections = computed<NasCategory<Section>[]>(() => [
   { value: 'syncs', label: t.value.syncs, icon: syncIcon, testid: 'nav_syncs' },
   { value: 'devices', label: t.value.devices, icon: devicesIcon, testid: 'nav_devices' },
@@ -111,9 +116,9 @@ async function refresh() {
       detail.value = nextDetail;
     }
     error.value = '';
-  } catch (failure) {
+  } catch (error_) {
     if (alive) {
-      error.value = String(failure);
+      error.value = String(error_);
     }
   } finally {
     refreshing = false;
@@ -140,8 +145,8 @@ async function run(action: () => Promise<unknown>) {
     await action();
     pending.value = null;
     await refresh();
-  } catch (failure) {
-    error.value = String(failure);
+  } catch (error_) {
+    error.value = String(error_);
   } finally {
     busy.value = false;
   }

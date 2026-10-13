@@ -23,8 +23,8 @@ async function load() {
   error.value = '';
   try {
     settings.value = await syncApi.settings();
-  } catch (failure) {
-    error.value = String(failure);
+  } catch (error_) {
+    error.value = String(error_);
   }
 }
 onMounted(load);
@@ -38,8 +38,8 @@ async function save() {
     await syncApi.saveSettings(settings.value);
     emit('saved');
     emit('close');
-  } catch (failure) {
-    error.value = String(failure);
+  } catch (error_) {
+    error.value = String(error_);
   } finally {
     busy.value = false;
   }

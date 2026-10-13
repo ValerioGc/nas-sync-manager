@@ -206,6 +206,28 @@ pub struct Conflict {
     pub size: u64,
 }
 
+fn conflict_of(entry: &fs::DirEntry, folder: &Path, name: &str) -> Option<Conflict> {
+    let original = original_of(name)?;
+    let relative = entry
+        .path()
+        .strip_prefix(folder)
+        .map(storage::relative)
+        .unwrap_or_default();
+    let parent = Path::new(&relative)
+        .parent()
+        .map(storage::relative)
+        .unwrap_or_default();
+    Some(Conflict {
+        original: if parent.is_empty() {
+            original
+        } else {
+            format!("{parent}/{original}")
+        },
+        path: relative,
+        size: entry.metadata().map(|metadata| metadata.len()).unwrap_or(0),
+    })
+}
+
 /// The conflict copies under a folder, the first ones.
 pub fn conflicts_in(folder: &Path) -> Vec<Conflict> {
     let mut found = Vec::new();
@@ -225,27 +247,10 @@ pub fn conflicts_in(folder: &Path) -> Vec<Conflict> {
                 }
                 continue;
             }
-            let Some(original) = original_of(&name) else {
+            let Some(conflict) = conflict_of(&entry, folder, &name) else {
                 continue;
             };
-            let relative = entry
-                .path()
-                .strip_prefix(folder)
-                .map(storage::relative)
-                .unwrap_or_default();
-            let parent = Path::new(&relative)
-                .parent()
-                .map(storage::relative)
-                .unwrap_or_default();
-            found.push(Conflict {
-                original: if parent.is_empty() {
-                    original
-                } else {
-                    format!("{parent}/{original}")
-                },
-                path: relative,
-                size: entry.metadata().map(|metadata| metadata.len()).unwrap_or(0),
-            });
+            found.push(conflict);
             if found.len() >= MAX_CONFLICTS {
                 return found;
             }
@@ -504,25 +509,8 @@ impl Service {
                 None
             };
             let online = connected.contains(&sync.device);
-            if online && !sync.paused && !sync.revoked && sync.mode != "pc-to-nas" {
-                if let Some(status) = status.as_mut() {
-                    match self.syncthing.completion(&sync.id, &sync.device).await {
-                        Ok(peer) => {
-                            status.global_bytes = status.global_bytes.max(peer.global_bytes);
-                            status.need_bytes = status.need_bytes.max(peer.need_bytes);
-                            status.need_files = status
-                                .need_files
-                                .max(peer.need_items.max(peer.need_deletes));
-                            if peer.remote_state == "paused" {
-                                status.state = "paused".into();
-                            } else if peer.remote_state != "valid" {
-                                status.state = "unknown".into();
-                            }
-                        }
-                        Err(_) => status.state = "unknown".into(),
-                    }
-                }
-            }
+            self.include_peer_completion(&sync, status.as_mut(), online)
+                .await;
             let (state, progress) = state_of(&sync, status.as_ref(), online);
             let status = status.unwrap_or_default();
             let last_sync = folder_stats[&sync.id]["lastFile"]["at"]
@@ -548,6 +536,35 @@ impl Service {
             });
         }
         Ok(listed)
+    }
+
+    async fn include_peer_completion(
+        &self,
+        sync: &Sync,
+        status: Option<&mut syncthing::FolderStatus>,
+        online: bool,
+    ) {
+        if !online || sync.paused || sync.revoked || sync.mode == "pc-to-nas" {
+            return;
+        }
+        let Some(status) = status else {
+            return;
+        };
+        match self.syncthing.completion(&sync.id, &sync.device).await {
+            Ok(peer) => {
+                status.global_bytes = status.global_bytes.max(peer.global_bytes);
+                status.need_bytes = status.need_bytes.max(peer.need_bytes);
+                status.need_files = status
+                    .need_files
+                    .max(peer.need_items.max(peer.need_deletes));
+                if peer.remote_state == "paused" {
+                    status.state = "paused".into();
+                } else if peer.remote_state != "valid" {
+                    status.state = "unknown".into();
+                }
+            }
+            Err(_) => status.state = "unknown".into(),
+        }
     }
 
     async fn known(&self, id: &str) -> Result<Sync, Failure> {

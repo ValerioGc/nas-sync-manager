@@ -80,10 +80,20 @@ pub fn discard(folder: &Path, file: &Path, disks: &[PathBuf]) -> io::Result<()> 
         ));
     }
     let target = trash.join(real.strip_prefix(&disk).unwrap_or(&relative));
+    prepare_trash_parent(&trash, &target)?;
+    match fs::symlink_metadata(&target) {
+        Ok(existing) if existing.is_dir() => fs::remove_dir_all(&target)?,
+        Ok(_) => fs::remove_file(&target)?,
+        Err(_) => {}
+    }
+    fs::rename(&real, &target)
+}
+
+fn prepare_trash_parent(trash: &Path, target: &Path) -> io::Result<()> {
     if let Some(parent) = target.parent() {
-        let mut directory = trash.clone();
+        let mut directory = trash.to_path_buf();
         for component in parent
-            .strip_prefix(&trash)
+            .strip_prefix(trash)
             .map_err(io::Error::other)?
             .components()
         {
@@ -104,12 +114,7 @@ pub fn discard(folder: &Path, file: &Path, disks: &[PathBuf]) -> io::Result<()> 
             }
         }
     }
-    match fs::symlink_metadata(&target) {
-        Ok(existing) if existing.is_dir() => fs::remove_dir_all(&target)?,
-        Ok(_) => fs::remove_file(&target)?,
-        Err(_) => {}
-    }
-    fs::rename(&real, &target)
+    Ok(())
 }
 
 #[cfg(test)]

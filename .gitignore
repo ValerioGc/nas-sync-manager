@@ -1,0 +1,47 @@
+# The same in every application of nas-os; what belongs to one only is at the end.
+
+# Dependencies. pnpm's files stay local: the pipelines install with npm ci.
+node_modules/
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
+# Builds and release packages
+dist/
+dist-ssr/
+backend/target/
+backend/data/
+release-assets/
+.vite/
+*.tsbuildinfo
+*.timestamp-*-*.mjs
+
+# Tests, coverage and reports
+coverage/
+test-results/
+playwright-report/
+.playwright-results/
+__screenshots__/
+build-reports/
+clippy-report.json
+.scannerwork/
+.eslintcache
+
+# Logs
+logs
+*.log
+
+# Local settings and editors
+*.local
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Assistants
+CLAUDE.md
+.claude/

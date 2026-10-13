@@ -1,0 +1,13 @@
+node_modules/
+dist/
+backend/target/
+backend/tauri/gen/
+coverage/
+release-assets/
+build-reports/
+test-results/
+.playwright-results/
+package-lock.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+*.vue

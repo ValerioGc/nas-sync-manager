@@ -1,0 +1,25 @@
+{
+  "manifest_version": 1,
+  "app": {
+    "id": "nas-sync-manager",
+    "name": "Sincronizzazione",
+    "version": "0.1.1",
+    "icon": "icon.svg",
+    "category": "storage",
+    "system": false
+  },
+  "run": {
+    "exec": "bin/nas-sync-manager-axum",
+    "socket": "/run/nas-os/apps/nas-sync-manager.sock",
+    "background": true
+  },
+  "ui": {
+    "protocol": 1
+  },
+  "provides": [],
+  "permissions": {
+    "paths": ["/srv/storage"],
+    "network": ["sync"],
+    "packages": ["syncthing"]
+  }
+}

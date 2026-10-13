@@ -1,0 +1,32 @@
+# Dependency updates of a NAS application.
+version: 2
+
+# Grouped and monthly on purpose: a pull request per package every week is noise nobody
+# reads, and noise nobody reads is how the one that matters gets closed unopened.
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      npm:
+        patterns: ['*']
+
+  - package-ecosystem: cargo
+    directory: /backend
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      cargo:
+        patterns: ['*']
+
+  # The forgotten one: these run with the token of the workflows above.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']

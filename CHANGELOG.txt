@@ -1,0 +1,66 @@
+# Changelog
+
+All notable changes to nas-sync-manager are documented in this file.
+
+## [Unreleased]
+
+### Changed
+
+- The texts of the interface, in Italian and English, are impersonal and shorter: no ellipsis,
+  colon or semicolon, no names of internal programs, commands or variables.
+- The scrollbars come from the shared library, which shows only their thumb: no arrows and no
+  track.
+- The sidebar is the layout of the shared library, with an icon for each section and the settings
+  at the bottom with the classic gear. The refresh is an icon on the right of the page title.
+- Loading uses the spinner of the library; no synchronization and no computer show a sign, a title
+  and a short description.
+- The settings window uses the native dialog and the number steppers of the library, narrower,
+  with its buttons on the right; a number out of its bounds is not taken. The form fields have an
+  id.
+- The state of the engine is a banner with its sign and tone: an error when it is missing or its
+  last start failed, an information while it starts. `GET /api/status` says `failing` when the
+  last start failed.
+- The descriptions of the pages, the empty lists, the confirmations and the settings are clearer.
+- The frame and the badge of an empty list are `.nas_empty_framed` and `.nas_empty_badge` of the
+  shared library, the same rules as before.
+
+### Fixed
+
+- Syncthing never started on the NAS: the service of an application runs as a dynamic user with no
+  `$HOME`, and Syncthing stops at once without one. It now gets its own folder as home.
+
+### Removed
+
+- The unused text `appName` and icon `warning.svg`.
+
+## [0.1.1]
+
+### Fixed
+
+- Retry failed folder reconciliation and launcher declarations; serialize settings updates and
+  reject pairing the NAS with itself. Keep the API key out of process arguments.
+- Create shared trash parent directories with explicit storage-group permissions.
+- Accept null ignore lists from new Syncthing folders and start them only after installing
+  mandatory metadata exclusions; keep folders paused when exclusions cannot be applied.
+- The end-to-end tests start the backend without `--offline`: on a runner whose cargo registry
+  is still empty the crates could not be resolved.
+
+### Changed
+
+- The launcher bridge, the shared styles, the confirmation dialog, `formatBytes` and the build,
+  package and release scripts come from the shared library `@valeriogc/nas-base-app`.
+
+## [0.1.0]
+
+### Added
+
+- NAS synchronization application with sync and device lists, detail, pause, resume, revocation,
+  confirmed conflict resolution and bandwidth/full-rescan settings, in Italian and English.
+- Syncthing supervised inside the application sandbox, with a private Unix API, persistent key,
+  local-only startup configuration, LAN bandwidth limits and configuration restored after restart.
+- Internal client API for pairing, folder selection and managing only its own syncs; gateway
+  certificates and the Tauri client remain in the next phase.
+- Explorer trash integration through external versioning, metadata exclusions, path validation,
+  serialized sync mutations, and preservation of missing data folders.
+- Rust API and filesystem regression tests, frontend component and unit tests, and browser tests
+  against the real backend with a simulated Syncthing. NAS package and release checks.

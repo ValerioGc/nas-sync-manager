@@ -1,0 +1,205 @@
+# Build and release a NAS application from a version tag.
+name: Build
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 24
+
+jobs:
+  verify-release:
+    name: Verify release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://npm.pkg.github.com
+          scope: '@valeriogc'
+
+      - name: Install npm dependencies
+        run: npm ci --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify tag, versions and changelog
+        run: npx nas-base-app release-check "${GITHUB_REF_NAME}"
+
+      - name: Verify tagged commit is on main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          tag_commit="$(git rev-list -n 1 "${GITHUB_REF_NAME}")"
+          if ! git merge-base --is-ancestor "${tag_commit}" origin/main; then
+            echo "Tag ${GITHUB_REF_NAME} must point to a commit already reachable from main."
+            exit 1
+          fi
+
+  build-server:
+    name: Build and verify NAS package
+    needs: verify-release
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          workspaces: backend
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@valeriogc'
+
+      - name: Read application identity
+        run: |
+          node --input-type=module -e '
+            import { readFileSync, appendFileSync } from "node:fs";
+            const { app } = JSON.parse(readFileSync("nas-app.json", "utf8"));
+            appendFileSync(process.env.GITHUB_ENV, `APP_NAME=${app.id}\nAPP_ASSET=${app.id}-${app.version}-linux-x64.tar.gz\n`);
+          '
+
+      - name: Install npm dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run release checks and build NAS package
+        run: npm run release:test
+
+      - name: Upload the NAS package and checksum
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nas-package
+          path: |
+            release-assets/${{ env.APP_ASSET }}
+            release-assets/${{ env.APP_ASSET }}.sha256
+          if-no-files-found: error
+
+  create-release:
+    name: Create release
+    needs: build-server
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://npm.pkg.github.com
+          scope: '@valeriogc'
+
+      - name: Read application identity
+        run: |
+          node --input-type=module -e '
+            import { readFileSync, appendFileSync } from "node:fs";
+            const { app } = JSON.parse(readFileSync("nas-app.json", "utf8"));
+            appendFileSync(process.env.GITHUB_ENV, `APP_NAME=${app.id}\nAPP_ASSET=${app.id}-${app.version}-linux-x64.tar.gz\n`);
+          '
+
+      - name: Download the NAS package and checksum
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: nas-package
+          path: release-assets
+
+      - name: Verify and compute release checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          asset="${APP_NAME}-${GITHUB_REF_NAME#v}-linux-x64.tar.gz"
+          test -s "release-assets/$asset"
+          test -s "release-assets/$asset.sha256"
+          cd release-assets
+          sha256sum --check "$asset.sha256"
+          sha256sum "$asset" > SHA256SUMS.txt
+
+      - name: Install npm dependencies
+        run: npm ci --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "# ${APP_NAME} ${GITHUB_REF_NAME}"
+            echo
+            npx nas-base-app changelog "${GITHUB_REF_NAME#v}"
+            echo
+            echo "## Checksums (SHA-256)"
+            echo
+            echo '```'
+            cat release-assets/SHA256SUMS.txt
+            echo '```'
+          } > release-notes.md
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ env.APP_NAME }} ${{ github.ref_name }}
+          body_path: release-notes.md
+          files: |
+            release-assets/${{ env.APP_ASSET }}
+            release-assets/${{ env.APP_ASSET }}.sha256
+            release-assets/SHA256SUMS.txt
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-artifacts:
+    name: Remove temporary build artifacts
+    needs: create-release
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Delete artifacts after publication
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          artifact_ids=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts" \
+            --paginate --jq '.artifacts[].id')
+          for artifact_id in $artifact_ids; do
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}"
+          done

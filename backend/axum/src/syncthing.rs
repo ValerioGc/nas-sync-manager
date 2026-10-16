@@ -195,6 +195,9 @@ impl Syncthing {
             .env("STNODEFAULTFOLDER", "1")
             .env("STNOUPGRADE", "1")
             .env("STNORESTART", "1")
+            // One process, without the monitor of Syncthing: the application restarts it, and
+            // a kill leaves no child behind.
+            .env("STMONITORED", "1")
             .stdin(Stdio::null())
             .kill_on_drop(true);
         command

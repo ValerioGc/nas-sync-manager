@@ -174,7 +174,7 @@ async function confirm() {
 onMounted(() => {
   void refresh();
   timer = setInterval(() => {
-    if (!busy.value && !settingsOpen.value && !pending.value) {
+    if (!document.hidden && !busy.value && !settingsOpen.value && !pending.value) {
       void refresh();
     }
   }, 5000);

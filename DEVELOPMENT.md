@@ -16,7 +16,8 @@ uses the dependencies of the other NAS apps; it includes no Tauri. Version and i
   to avoid overlapping pairs created at the same time. Disk I/O on the blocking pool. A failed
   reconciliation is retried; the declarations to the launcher are renewed every 30 seconds to
   recover from temporary errors of the ports or of the background.
-- `syncthing.rs`: child process, restart, API on a private socket and key passed through
+- `syncthing.rs`: child process (`STMONITORED=1`: one process, no monitor of its own, so a stop
+  leaves no child behind), restart, API on a private socket and key passed through
   `STGUIAPIKEY`, absent from the arguments of the process, `HOME` set to its own folder (the
   dynamic user of the service has none); LAN-only settings already in the first `config.xml`,
   bandwidth limits, folders and the trash excluded from the sync. `failing` in `GET /api/status`
@@ -33,16 +34,17 @@ API of the page: `GET /api/status`, `/api/volumes`, `/api/syncs`, `/api/syncs/{i
 `this` or `other`); `GET /api/devices`, `DELETE /api/devices/{id}`; `GET` and `PUT /api/settings`
 (`maxSendKbps`, `maxRecvKbps`, `rescanMinutes`).
 
-Internal API of the future client: `POST /api/client/pair` (`deviceId`, `name`, `version`),
+Client API, reached by NAS Sync through the gateway: `POST /api/client/pair` (`deviceId`, `name`,
+`version`, where `deviceId` must be the computer named in `x-nas-client`),
 `GET /api/client/folders?path=...`, `GET` and `POST /api/client/syncs`, `PUT` and
 `DELETE /api/client/syncs/{id}`. Creation receives `name`, `nasPath`, `pcPath`, `mode`; edits can
 change `name`, `pcPath`, `mode`, `paused`. The modes are `two-way`, `pc-to-nas`, `nas-to-pc`. A
 client sees and edits only its own pairs.
 
-`x-nas-client` is an internal identity, not an authentication: when the gateway phase is
-implemented, the gateway will have to strip it from external requests and set it after checking
-the certificate, limiting the access to the client routes. Pairing will have to require the NAS
-credentials. Do not expose these routes as a public API before that phase.
+`x-nas-client` is set only by the gateway: it drops the header from every external request and
+writes it on `/client/sync/...` after checking the certificate of the computer, which it issues
+only with the account password. A certificate pairs once. Revoking or removing the computer in
+the Security center calls `DELETE /api/devices/{id}`, retried by the gateway until it succeeds.
 
 ## Conventions and dependencies
 

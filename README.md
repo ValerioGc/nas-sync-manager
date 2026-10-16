@@ -25,11 +25,12 @@ through a private Unix socket and a persistent key; if it stops it is started ag
 its configuration from the database again. The page shows the state of the engine in a banner:
 starting, not started (the last start failed, a new attempt follows by itself) or not installed.
 
-The Tauri client, the access of the clients through gateway certificates and the revocation from
-the Security center belong to the next phase. The internal API is ready, but the gateway does not
-offer the pairing of a PC yet. The exclusions of the PC do not move automatically with Syncthing:
-the `.stignore` files of the NAS are shown here; the future client will have to send its own
-exclusions.
+Computers pair through the desktop client NAS Sync (`destkop-apps/nas-sync-client`): the gateway
+gives each computer a certificate once the account password is confirmed, and lets only that
+certificate reach the client routes, naming the computer in `x-nas-client`. Revoking the computer
+in the Security center drops its pairs here too. The exclusions of the PC do not move
+automatically with Syncthing: the `.stignore` files of the NAS are shown here; the client does
+not send its own exclusions yet.
 
 ## Local development
 

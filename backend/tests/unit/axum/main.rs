@@ -96,6 +96,30 @@ async fn routes_pair_a_computer_and_manage_its_sync_until_revocation() {
                 "POST",
                 "/api/client/pair",
                 None,
+                json!({ "deviceId": PC_ID, "name": "PC", "version": "1" })
+            )
+            .await
+            .0,
+        401
+    );
+    assert_eq!(
+        server
+            .call(
+                "POST",
+                "/api/client/pair",
+                Some(PC_ID),
+                json!({ "deviceId": NAS_ID, "name": "PC", "version": "1" })
+            )
+            .await
+            .0,
+        403
+    );
+    assert_eq!(
+        server
+            .call(
+                "POST",
+                "/api/client/pair",
+                Some("bad"),
                 json!({ "deviceId": "bad", "name": "PC", "version": "1" })
             )
             .await
@@ -107,7 +131,7 @@ async fn routes_pair_a_computer_and_manage_its_sync_until_revocation() {
             .call(
                 "POST",
                 "/api/client/pair",
-                None,
+                Some(PC_ID),
                 json!({ "deviceId": PC_ID, "name": "Portatile", "version": "1" })
             )
             .await

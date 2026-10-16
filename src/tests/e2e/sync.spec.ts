@@ -11,6 +11,7 @@ test('manages a real backend sync, resolves a conflict, and retains NAS files on
     )
     .toBe(true);
   const pairing = await request.post('/api/client/pair', {
+    headers: { 'x-nas-client': pc },
     data: { deviceId: pc, name: 'Portatile', version: '0.1.0' },
   });
   expect(pairing.ok()).toBe(true);

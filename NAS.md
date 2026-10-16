@@ -19,5 +19,5 @@ first installation has an empty database. The firewall and the real process insi
 still need the VM test described in [DEVELOPMENT.md](DEVELOPMENT.md).
 
 CI, build and audit workflows as in the other NAS apps; metadata and version consistent across
-Cargo, package, Sonar and changelog. The iframe protocol is in [APPS.md](APPS.md). Gateway for the
-clients, Tauri and Security center are postponed to the next phase.
+Cargo, package, Sonar and changelog. The iframe protocol is in [APPS.md](APPS.md). The computers reach
+the client routes through the gateway, with their certificate.

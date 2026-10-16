@@ -68,6 +68,6 @@ Frontend tests live under `src/tests/unit`, `src/tests/component`, `src/tests/sc
 ports through the launcher. `PUT /api/apps/self/background` with `{ needed: boolean }` keeps the
 application running while at least one sync is active. The initial database contains no syncs.
 
-The client API and its `x-nas-client` identity are internal. External certificate authentication
-and security-center revocation are deferred to the client/gateway phase; the app cannot verify
-a certificate from this header. See [DEVELOPMENT.md](DEVELOPMENT.md).
+The client API is reached by the desktop client through the gateway only, which checks the
+certificate of the computer and sets `x-nas-client`; revocation from the Security center drops
+the computer here too. See [DEVELOPMENT.md](DEVELOPMENT.md).

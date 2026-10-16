@@ -124,7 +124,20 @@ fn client_of(headers: &HeaderMap) -> Option<&str> {
     headers.get(CLIENT).and_then(|value| value.to_str().ok())
 }
 
-async fn pair(State(state): State<AppState>, Json(pairing): Json<Pairing>) -> Answer<Value> {
+/// Pairs the computer the gateway named: only its own engine, never another.
+async fn pair(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(pairing): Json<Pairing>,
+) -> Answer<Value> {
+    let named = client_of(&headers)
+        .ok_or_else(|| Failure::new(StatusCode::UNAUTHORIZED, "The computer is not identified."))?;
+    if named != pairing.device_id {
+        return Err(Failure::new(
+            StatusCode::FORBIDDEN,
+            "The engine is not the one of this computer.",
+        ));
+    }
     Ok(Json(state.service.pair(pairing).await?))
 }
 

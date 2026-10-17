@@ -2,7 +2,7 @@
 
 All notable changes to nas-sync-manager are documented in this file.
 
-## [Unreleased]
+## [0.1.6]
 
 ### Fixed
 

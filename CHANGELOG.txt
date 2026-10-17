@@ -2,6 +2,30 @@
 
 All notable changes to nas-sync-manager are documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- A sync that never ran no longer gives its clients the date 01/01/01: the year 1 of Syncthing means
+  none.
+
+### Security
+
+- The socket of the app answers the launcher only (root, the owner of the folder of the sockets, or
+  the app itself): another app of the NAS can no longer reach its API with headers it made up
+  (`launcher_only.rs`).
+
+### Changed
+
+- What the sync deletes or replaces on the NAS no longer pushes the version already in the trash
+  out: that one stays beside it, numbered (`report (1).pdf`).
+- The details say when the trash of the disk is off, so the files the sync deletes are gone for good
+  (`trashOff`).
+- The temporary files of a backup (`.nas-backup-*`) are excluded from every sync.
+- The detail reads the conflicts of a folder at most once a minute and only the state of its own
+  sync, instead of walking the folder and every sync at each opening.
+- The texts name the app File instead of Explorer.
+
 ## [0.1.5]
 
 ### Changed

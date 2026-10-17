@@ -7,6 +7,11 @@ it('shows empty details then file changes, exclusions and conflict choices', asy
   expect(wrapper.text()).toContain('Nessun conflitto');
   expect(wrapper.text()).toContain('Nessun percorso escluso');
   expect(wrapper.text()).toContain('Nessun cambiamento');
+  expect(wrapper.find('[data-testid="detail_trash_off"]').exists()).toBe(false);
+  await wrapper.setProps({ detail: { ...detail, sync: { ...detail.sync, trashOff: true } } });
+  expect(wrapper.get('[data-testid="detail_trash_off"]').text()).toContain(
+    'cancellati definitivamente',
+  );
   await wrapper.setProps({
     detail: {
       ...detail,

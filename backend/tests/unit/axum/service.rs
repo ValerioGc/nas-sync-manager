@@ -469,6 +469,14 @@ async fn a_revoked_computer_loses_its_syncs_and_syncthing_gets_everything_again(
             .as_deref(),
         Some("2026-10-11T10:01:00Z")
     );
+    assert!(!bench.service.list(None).await.unwrap()[0].trash_off);
+    std::fs::write(bench.scratch.path().join("disk/.nas-trash-off"), "").unwrap();
+    assert!(bench.service.list(None).await.unwrap()[0].trash_off);
+    std::fs::remove_file(bench.scratch.path().join("disk/.nas-trash-off")).unwrap();
+    // What never happened, as Syncthing writes it, is no date.
+    bench.syncthing.known.lock().unwrap().stats_folder =
+        json!({ id.clone(): { "lastFile": { "at": "0001-01-01T00:00:00Z" } } });
+    assert_eq!(bench.service.list(None).await.unwrap()[0].last_sync, None);
 
     let saved = bench
         .service

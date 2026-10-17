@@ -389,7 +389,8 @@ impl Syncthing {
             _ => return Err("syncthing did not return its ignore patterns".to_owned()),
         };
         let mut changed = false;
-        for pattern in ["/.nas-trash", "/.nas-trash-off"] {
+        // The temporary files of a backup written into the folder are never sent either.
+        for pattern in ["/.nas-trash", "/.nas-trash-off", ".nas-backup-*"] {
             if !ignores.iter().any(|line| line == pattern) {
                 ignores.insert(0, pattern.to_owned());
                 changed = true;

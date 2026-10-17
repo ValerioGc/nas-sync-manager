@@ -92,6 +92,12 @@ async fn runs_syncthing_and_speaks_to_it_with_its_key() {
         .unwrap()
         .ignores
         .contains(&"/.nas-trash".to_owned()));
+    assert!(fake
+        .known
+        .lock()
+        .unwrap()
+        .ignores
+        .contains(&".nas-backup-*".to_owned()));
     assert_eq!(syncthing.folders().await.expect("folders"), ["nas-abc"]);
     assert_eq!(
         syncthing

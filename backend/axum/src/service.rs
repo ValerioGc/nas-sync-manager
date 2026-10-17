@@ -23,10 +23,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sqlx::SqlitePool;
 use std::{
+    collections::HashMap,
     fs,
     path::{Path, PathBuf},
     sync::atomic::{AtomicBool, Ordering},
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 const MODES: [&str; 3] = ["two-way", "pc-to-nas", "nas-to-pc"];
@@ -34,6 +35,9 @@ const MODES: [&str; 3] = ["two-way", "pc-to-nas", "nas-to-pc"];
 const FOLDER_PREFIX: &str = "nas-";
 const MARKER: &str = ".sync-conflict-";
 const MAX_CONFLICTS: usize = 200;
+/// How long the conflicts found in a folder stand before it is read again: a large folder is not
+/// walked whole at every opening of its detail.
+const CONFLICTS_FRESH: Duration = Duration::from_secs(60);
 
 pub fn now_ms() -> i64 {
     SystemTime::now()
@@ -151,6 +155,8 @@ pub struct Listed {
     pub need_files: u64,
     pub last_sync: Option<String>,
     pub error: Option<String>,
+    /// The trash of its disk is off: what the sync deletes on the NAS is gone for good.
+    pub trash_off: bool,
 }
 
 /// The state of a sync from what Syncthing says of it and of its computer.
@@ -304,6 +310,8 @@ pub struct Service {
     trash_command: String,
     mutations: tokio::sync::Mutex<()>,
     reconcile_needed: AtomicBool,
+    /// The conflicts last found in the folder of each sync, and when.
+    conflicts: std::sync::Mutex<HashMap<String, (Instant, Vec<Conflict>)>>,
 }
 
 impl Service {
@@ -317,6 +325,7 @@ impl Service {
         Self {
             mutations: tokio::sync::Mutex::new(()),
             reconcile_needed: AtomicBool::new(true),
+            conflicts: std::sync::Mutex::default(),
             pool,
             launcher,
             syncthing,
@@ -485,6 +494,33 @@ impl Service {
 
     /// Every sync with where it is; `device` keeps only those of one computer.
     pub async fn list(&self, device: Option<&str>) -> Result<Vec<Listed>, Failure> {
+        self.listing(|sync| device.is_none_or(|device| sync.device == device))
+            .await
+    }
+
+    /// Whether the trash of the disk of a folder of the NAS is off.
+    async fn trash_off(&self, nas_path: &str) -> bool {
+        let disk = match &self.storage {
+            Ok(Storage::Volumes(volumes)) => {
+                let id = nas_path.split('/').next().unwrap_or_default();
+                volumes
+                    .iter()
+                    .find(|volume| volume.id == id)
+                    .map(|volume| volume.path.clone())
+            }
+            Ok(Storage::Root(root)) => Some(root.clone()),
+            Err(_) => None,
+        };
+        match disk {
+            Some(disk) => tokio::fs::try_exists(disk.join(crate::trash::TRASH_OFF))
+                .await
+                .unwrap_or(false),
+            None => false,
+        }
+    }
+
+    /// The syncs `keep` takes, each with what Syncthing says of it now.
+    async fn listing(&self, keep: impl Fn(&Sync) -> bool) -> Result<Vec<Listed>, Failure> {
         let devices = store::devices(&self.pool).await?;
         let syncs = store::syncs(&self.pool).await?;
         let running = self.syncthing.is_running();
@@ -499,10 +535,7 @@ impl Service {
             (Value::Null, Value::Null)
         };
         let mut listed = Vec::new();
-        for sync in syncs
-            .into_iter()
-            .filter(|sync| device.is_none_or(|device| sync.device == device))
-        {
+        for sync in syncs.into_iter().filter(|sync| keep(sync)) {
             let mut status = if running && !sync.revoked {
                 self.syncthing.folder_status(&sync.id).await.ok()
             } else {
@@ -517,7 +550,9 @@ impl Service {
                 .as_str()
                 .or_else(|| folder_stats[&sync.id]["lastScan"].as_str())
                 .map(str::to_owned)
-                .filter(|at| !at.starts_with("1970"));
+                // Syncthing writes what never happened as the year 1 (or 1970).
+                .filter(|at| !at.starts_with("0001") && !at.starts_with("1970"));
+            let trash_off = self.trash_off(&sync.nas_path).await;
             listed.push(Listed {
                 device_name: devices
                     .iter()
@@ -532,6 +567,7 @@ impl Service {
                 need_files: status.need_files,
                 last_sync,
                 error: (!status.error.is_empty()).then_some(status.error),
+                trash_off,
                 sync,
             });
         }
@@ -577,24 +613,42 @@ impl Service {
     pub async fn detail(&self, id: &str) -> Result<Value, Failure> {
         let sync = self.known(id).await?;
         let listed = self
-            .list(None)
+            .listing(|known| known.id == sync.id)
             .await?
             .into_iter()
-            .find(|listed| listed.sync.id == sync.id)
+            .next()
             .ok_or_else(|| Failure::missing("No such sync."))?;
         let running = self.syncthing.is_running() && !sync.revoked;
-        let conflicts = match self.folder_path(&sync, false).await {
-            Ok(path) => tokio::task::spawn_blocking(move || conflicts_in(&path))
-                .await
-                .unwrap_or_default(),
-            Err(_) => Vec::new(),
-        };
+        let conflicts = self.conflicts_of(&sync).await;
         Ok(json!({
             "sync": listed,
             "changes": if running { self.syncthing.changes(&sync.id).await } else { Vec::new() },
             "ignores": if running { self.syncthing.ignores(&sync.id).await } else { Vec::new() },
             "conflicts": conflicts,
         }))
+    }
+
+    /// The conflicts in the folder of a sync, read again once `CONFLICTS_FRESH` has passed.
+    async fn conflicts_of(&self, sync: &Sync) -> Vec<Conflict> {
+        let fresh = self.conflicts.lock().ok().and_then(|known| {
+            known
+                .get(&sync.id)
+                .filter(|(at, _)| at.elapsed() < CONFLICTS_FRESH)
+                .map(|(_, conflicts)| conflicts.clone())
+        });
+        if let Some(conflicts) = fresh {
+            return conflicts;
+        }
+        let found = match self.folder_path(sync, false).await {
+            Ok(path) => tokio::task::spawn_blocking(move || conflicts_in(&path))
+                .await
+                .unwrap_or_default(),
+            Err(_) => Vec::new(),
+        };
+        if let Ok(mut known) = self.conflicts.lock() {
+            known.insert(sync.id.clone(), (Instant::now(), found.clone()));
+        }
+        found
     }
 
     /// Pauses or resumes a sync, from the NAS or from its client.
@@ -702,6 +756,10 @@ impl Service {
         }
         let disks = self.disks();
         let (path, keep) = (path.to_owned(), keep.to_owned());
+        // The next detail reads the folder again.
+        if let Ok(mut known) = self.conflicts.lock() {
+            known.remove(id);
+        }
         tokio::task::spawn_blocking(move || resolve_conflict(&folder, &path, &keep, &disks))
             .await
             .map_err(|error| Failure::unavailable(error.to_string()))?

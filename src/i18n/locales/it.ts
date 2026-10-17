@@ -82,12 +82,14 @@ export const it = {
   ignores: 'Percorsi esclusi',
   noChanges: 'Nessun cambiamento recente.',
   noConflicts: 'Nessun conflitto.',
+  trashOff:
+    'Il cestino di questo disco è spento: i file eliminati dalla sincronizzazione vengono cancellati definitivamente.',
   noIgnores: 'Nessun percorso escluso.',
   keepThis: 'Tieni il file attuale',
   keepOther: 'Tieni la copia in conflitto',
   conflictTitle: 'Risolvere questo conflitto?',
   conflictMessage:
-    'Il file scartato finisce nel cestino di Explorer, se attivo. Senza cestino viene eliminato definitivamente.',
+    'Il file scartato finisce nel cestino dell’app File, se attivo. Senza cestino viene eliminato definitivamente.',
   conflictCopy: 'Copia in conflitto',
   original: 'File attuale',
   progress: 'Avanzamento',

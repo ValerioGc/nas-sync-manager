@@ -72,6 +72,9 @@ function action(value: string) {
       :aria-label="t.progress"
     />
     <p v-if="detail.sync.error" class="app_error">{{ detail.sync.error }}</p>
+    <p v-if="detail.sync.trashOff" class="trash_off" role="note" data-testid="detail_trash_off">
+      {{ t.trashOff }}
+    </p>
     <h2>{{ t.conflicts }}</h2>
     <p v-if="!detail.conflicts.length">{{ t.noConflicts }}</p>
     <article
@@ -127,6 +130,13 @@ function action(value: string) {
 dd {
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+.trash_off {
+  padding: $sync_space;
+  border-left: 3px solid var(--tone-warning);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--tone-warning) 10%, transparent);
 }
 
 .conflict_row {

@@ -16,8 +16,12 @@ engine.
 
 Pairs are created and edited from the API of the client. The revocation of a pair stays visible to
 the client until it removes it; that of a computer removes all its pairs. The files on the NAS
-stay. Sync folders cannot overlap; a revoked folder can be paired again. The trash and the NAS
-metadata are excluded from the sync, even when a whole disk is chosen.
+stay. Sync folders cannot overlap; a revoked folder can be paired again. The trash, the NAS
+metadata and the temporary files of a backup (`.nas-backup-*`) are excluded from the sync, even when
+a whole disk is chosen. What the sync deletes or replaces on the NAS goes to the trash of the disk,
+and a version already there stays beside it, numbered (`report (1).pdf`); while the trash of the
+disk is off the details say that those files are deleted for good. The conflicts of a folder are
+read again at most once a minute.
 
 The app declares background work and sync ports to the launcher while at least one pair is active.
 At the first installation there are no pairs and the ports stay closed. Syncthing talks to the app

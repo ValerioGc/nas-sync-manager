@@ -2,7 +2,7 @@ use super::*;
 use crate::test_support::Scratch;
 
 #[test]
-fn what_the_sync_deletes_goes_to_the_trash_of_its_disk_one_version_each() {
+fn what_the_sync_deletes_goes_to_the_trash_of_its_disk_keeping_every_version() {
     let scratch = Scratch::new();
     let disk = scratch.path().join("disk");
     let folder = disk.join("Foto");
@@ -31,7 +31,7 @@ fn what_the_sync_deletes_goes_to_the_trash_of_its_disk_one_version_each() {
             0o2770
         );
     }
-    // A path relative to the folder, as Syncthing may give it, and a version that replaces the old.
+    // A path relative to the folder, as Syncthing may give it; the version before stays beside.
     scratch.write("disk/Foto/2026/a.jpg", "second");
     discard(
         &folder,
@@ -43,6 +43,21 @@ fn what_the_sync_deletes_goes_to_the_trash_of_its_disk_one_version_each() {
         fs::read_to_string(disk.join(".nas-trash/Foto/2026/a.jpg")).unwrap(),
         "second"
     );
+    assert_eq!(
+        fs::read_to_string(disk.join(".nas-trash/Foto/2026/a (1).jpg")).unwrap(),
+        "first"
+    );
+}
+
+#[test]
+fn a_taken_name_gets_the_first_free_number_beside_it() {
+    let scratch = Scratch::new();
+    let taken = scratch.write("report.pdf", "x");
+    assert_eq!(numbered(&taken), scratch.path().join("report (1).pdf"));
+    scratch.write("report (1).pdf", "x");
+    assert_eq!(numbered(&taken), scratch.path().join("report (2).pdf"));
+    let bare = scratch.write("notes", "x");
+    assert_eq!(numbered(&bare), scratch.path().join("notes (1)"));
 }
 
 #[test]

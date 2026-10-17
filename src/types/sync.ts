@@ -21,6 +21,8 @@ export interface ListedSync extends Sync {
   needBytes: number;
   needFiles: number;
   lastSync: string | null;
+  /** The trash of its disk is off: what the sync deletes on the NAS is gone for good. */
+  trashOff: boolean;
   error: string | null;
 }
 export interface Device {

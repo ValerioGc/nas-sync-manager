@@ -81,12 +81,27 @@ pub fn discard(folder: &Path, file: &Path, disks: &[PathBuf]) -> io::Result<()> 
     }
     let target = trash.join(real.strip_prefix(&disk).unwrap_or(&relative));
     prepare_trash_parent(&trash, &target)?;
-    match fs::symlink_metadata(&target) {
-        Ok(existing) if existing.is_dir() => fs::remove_dir_all(&target)?,
-        Ok(_) => fs::remove_file(&target)?,
-        Err(_) => {}
+    // The version already there stays beside, numbered: the sync never loses one for another.
+    if fs::symlink_metadata(&target).is_ok() {
+        fs::rename(&target, numbered(&target))?;
     }
     fs::rename(&real, &target)
+}
+
+/// The first free name beside a taken one: `report (1).pdf`, `report (2).pdf`...
+pub fn numbered(taken: &Path) -> PathBuf {
+    let name = taken
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let (stem, extension) = match name.rfind('.') {
+        Some(dot) if dot > 0 => name.split_at(dot),
+        _ => (name.as_str(), ""),
+    };
+    (1..)
+        .map(|number| taken.with_file_name(format!("{stem} ({number}){extension}")))
+        .find(|candidate| fs::symlink_metadata(candidate).is_err())
+        .unwrap_or_else(|| taken.to_path_buf())
 }
 
 fn prepare_trash_parent(trash: &Path, target: &Path) -> io::Result<()> {

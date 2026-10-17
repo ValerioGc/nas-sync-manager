@@ -17,6 +17,7 @@ export const listed: ListedSync = {
   needBytes: 1024,
   needFiles: 1,
   lastSync: null,
+  trashOff: false,
   error: null,
 };
 export const device: Device = {

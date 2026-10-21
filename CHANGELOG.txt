@@ -1,0 +1,6 @@
+# Changelog
+
+All notable changes to nas-sync-manager are documented in this file.
+
+## [0.9.0]
+- Initial release of nas-sync-manager.

@@ -1,0 +1,23 @@
+@use '@valeriogc/nas-base-app/styles/_nas-theme.scss';
+@use '@valeriogc/nas-base-app/styles/partials/_reset.scss';
+@use '@valeriogc/nas-base-app/styles/_nas-apps.scss';
+@use '@valeriogc/nas-base-app/styles/_nas-layout.scss';
+@use '@valeriogc/nas-base-app/styles/_nas-buttons.scss';
+@use '@valeriogc/nas-base-app/styles/_nas-modal.scss';
+@use '@valeriogc/nas-base-app/styles/_nas-number-stepper.scss';
+@use '@valeriogc/nas-base-app/styles/_nas-loading.scss';
+@use '@valeriogc/nas-base-app/styles/_nas-empty-state.scss';
+@use '@valeriogc/nas-base-app/styles/_nas-confirm-dialog.scss';
+@use '@valeriogc/nas-base-app/styles/_nas-scrollbar.scss';
+
+.page_header {
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: var(--nas-muted);
+  }
+}

@@ -12,8 +12,10 @@ updates:
     groups:
       npm:
         patterns: ['*']
-    # waiting vue-tsc to support TypeScript 7
     ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-patch']
+      # waiting vue-tsc to support TypeScript 7
       - dependency-name: typescript
         update-types: ['version-update:semver-major', 'version-update:semver-minor']
 
@@ -25,6 +27,9 @@ updates:
     groups:
       cargo:
         patterns: ['*']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-patch']
 
   # The forgotten one: these run with the token of the workflows above.
   - package-ecosystem: github-actions
@@ -34,3 +39,6 @@ updates:
     groups:
       actions:
         patterns: ['*']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-patch']

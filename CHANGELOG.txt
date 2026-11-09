@@ -2,5 +2,11 @@
 
 All notable changes to nas-sync-manager are documented in this file.
 
+## [0.9.1]
+
+### Fixed
+
+- Update terminology for synchronization and adjust related tests.
+
 ## [0.9.0]
 - Initial release of nas-sync-manager.

@@ -3,7 +3,7 @@
   "app": {
     "id": "nas-sync-manager",
     "name": "Sync Manager",
-    "version": "0.9.0",
+    "version": "0.9.1",
     "icon": "icon.svg",
     "category": "storage",
     "system": false

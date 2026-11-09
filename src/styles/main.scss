@@ -10,6 +10,11 @@
 @use '@valeriogc/nas-base-app/styles/_nas-confirm-dialog.scss';
 @use '@valeriogc/nas-base-app/styles/_nas-scrollbar.scss';
 
+.sync_content {
+  display: flex;
+  flex-direction: column;
+}
+
 .page_header {
   h1 {
     margin: 0;

@@ -21,7 +21,7 @@ const { t } = useI18n();
 <template>
   <header class="page_header">
     <div class="page_heading">
-      <h1>{{ section === 'syncs' ? t.syncs : t.devices }}</h1>
+      <h1>{{ section === 'syncs' ? t.sync : t.devices }}</h1>
       <button
         type="button"
         class="app_button app_button--icon"

@@ -65,7 +65,7 @@ test('saves bandwidth and scan settings across reload and adapts language and th
 }) => {
   await page.goto('/?lang=en&theme=dark');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(page.getByTestId('nav_syncs')).toHaveText('Synchronizations');
+  await expect(page.getByTestId('nav_syncs')).toHaveText('Synchronization');
   await page.getByTestId('nav_settings').click();
   await page.getByTestId('settings_send').fill('100');
   await page.getByTestId('settings_receive').fill('200');
@@ -92,4 +92,18 @@ test('saves bandwidth and scan settings across reload and adapts language and th
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
+});
+
+test('shows the NAS identity at the bottom right of the window', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('nav_syncs')).toHaveText('Sincronizzazione');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sincronizzazione');
+  const identity = page.getByTestId('nas_identity');
+  await expect(identity).toContainText('ID dispositivo del NAS');
+  const box = await identity.boundingBox();
+  const content = await page.getByRole('main').boundingBox();
+  const viewport = page.viewportSize();
+  expect(box && content && viewport).toBeTruthy();
+  expect(content!.x + content!.width - (box!.x + box!.width)).toBeLessThan(48);
+  expect(viewport!.height - (box!.y + box!.height)).toBeLessThan(48);
 });

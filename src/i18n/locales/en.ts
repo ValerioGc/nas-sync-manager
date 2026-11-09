@@ -1,5 +1,6 @@
 export const en = {
   sectionsLabel: 'Synchronization sections',
+  sync: 'Synchronization',
   syncs: 'Synchronizations',
   devices: 'Devices',
   settings: 'Settings',

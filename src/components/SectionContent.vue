@@ -69,7 +69,7 @@ const { t } = useI18n();
     :busy="busy"
     @revoke="(id) => emit('request', { kind: 'device', id })"
   />
-  <p v-if="deviceId" class="device_identity">
+  <p v-if="deviceId" class="device_identity" data-testid="nas_identity">
     <span>{{ t.identity }}</span>
     <code>{{ deviceId }}</code>
   </p>
@@ -79,9 +79,14 @@ const { t } = useI18n();
 
 .device_identity {
   display: grid;
+  justify-items: end;
   gap: 4px;
-  margin-top: $sync_space_large;
+  align-self: flex-end;
+  max-width: 100%;
+  margin: auto 0 0;
+  padding-top: $sync_space_large;
   color: var(--nas-muted);
+  text-align: right;
   font-size: 0.875rem;
 
   code {

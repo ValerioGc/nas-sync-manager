@@ -64,7 +64,7 @@ const confirmAction = computed(() => {
 });
 
 const sections = computed<NasCategory<Section>[]>(() => [
-  { value: 'syncs', label: t.value.syncs, icon: syncIcon, testid: 'nav_syncs' },
+  { value: 'syncs', label: t.value.sync, icon: syncIcon, testid: 'nav_syncs' },
   { value: 'devices', label: t.value.devices, icon: devicesIcon, testid: 'nav_devices' },
 ]);
 
@@ -198,6 +198,7 @@ onUnmounted(() => {
     :model-value="section"
     :categories="sections"
     :navigation-label="t.sectionsLabel"
+    :content-attrs="{ class: 'sync_content' }"
     @update:model-value="navigate"
   >
     <template #icon="{ category }">

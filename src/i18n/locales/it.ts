@@ -84,7 +84,7 @@ export const it = {
   noChanges: 'Nessun cambiamento recente.',
   noConflicts: 'Nessun conflitto.',
   trashOff:
-    'Il cestino di questo disco è spento: i file eliminati dalla sincronizzazione vengono cancellati definitivamente.',
+    'Il cestino di questo disco è spento, quindi i file eliminati dalla sincronizzazione vengono cancellati definitivamente.',
   noIgnores: 'Nessun percorso escluso.',
   keepThis: 'Tieni il file attuale',
   keepOther: 'Tieni la copia in conflitto',

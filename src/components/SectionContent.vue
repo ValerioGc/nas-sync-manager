@@ -41,7 +41,6 @@ const { t } = useI18n();
 <template>
   <NasLoading v-if="loading" :label="t.loading" />
 
-  <!-- Sync detail -->
   <SyncDetail
     v-else-if="detail"
     :detail="detail"

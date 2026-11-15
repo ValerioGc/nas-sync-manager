@@ -53,7 +53,6 @@ function action(value: string) {
       </button>
     </div>
 
-    <!-- Detail metrics -->
     <dl class="detail_metrics">
       <dt>{{ t.nasFolder }}</dt>
       <dd>{{ diskPath(detail.sync.nasPath, volumes) }}</dd>
@@ -81,7 +80,6 @@ function action(value: string) {
       :aria-label="t.progress"
     ></progress>
 
-    <!-- Detail errors -->
     <p v-if="detail.sync.error" class="app_error">{{ detail.sync.error }}</p>
     <p v-if="detail.sync.trashOff" class="trash_off" role="note" data-testid="detail_trash_off">
       {{ t.trashOff }}
@@ -115,7 +113,6 @@ function action(value: string) {
       </div>
     </article>
 
-    <!-- Detail conflicts -->
     <h2>{{ t.changes }}</h2>
     <p v-if="!detail.changes.length">{{ t.noChanges }}</p>
     <ul v-else>

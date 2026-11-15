@@ -34,7 +34,7 @@
     "postinstall": "nas-base-app lock --sync"
   },
   "dependencies": {
-    "@valeriogc/nas-base-app": "0.9.2",
+    "@valeriogc/nas-base-app": "0.9.3",
     "vue": "3.5.44"
   },
   "overrides": {

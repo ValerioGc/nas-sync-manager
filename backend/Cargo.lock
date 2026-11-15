@@ -785,10 +785,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "nas-app-core"
+version = "0.1.0"
+source = "git+https://github.com/ValerioGc/nas-app-core?tag=v0.1.0#84fd049df345f2d7728bad76fe783d3514599a8a"
+dependencies = [
+ "axum",
+ "tokio",
+]
+
+[[package]]
 name = "nas-sync-manager-axum"
 version = "0.9.1"
 dependencies = [
  "axum",
+ "nas-app-core",
  "serde",
  "serde_json",
  "sqlx",

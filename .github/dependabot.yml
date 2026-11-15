@@ -1,8 +1,7 @@
-# Dependency updates of a NAS application.
+# Dependency updates of a NAS application, grouped and monthly so the pull requests stay few
+# enough to be reviewed.
 version: 2
 
-# Grouped and monthly on purpose: a pull request per package every week is noise nobody
-# reads, and noise nobody reads is how the one that matters gets closed unopened.
 updates:
   - package-ecosystem: npm
     directory: /
@@ -15,7 +14,7 @@ updates:
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-patch']
-      # waiting vue-tsc to support TypeScript 7
+      # Hold TypeScript until vue-tsc supports TypeScript 7.
       - dependency-name: typescript
         update-types: ['version-update:semver-major', 'version-update:semver-minor']
 
@@ -31,7 +30,6 @@ updates:
       - dependency-name: '*'
         update-types: ['version-update:semver-patch']
 
-  # The forgotten one: these run with the token of the workflows above.
   - package-ecosystem: github-actions
     directory: /
     schedule:

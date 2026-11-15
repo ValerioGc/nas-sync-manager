@@ -1,5 +1,7 @@
 use super::*;
 use crate::test_support::{database, FakeLauncher, FakeSyncthing, Scratch, NAS_ID, PC_ID};
+use axum::http::header;
+use tokio::net::UnixStream;
 
 struct Server {
     _scratch: Scratch,

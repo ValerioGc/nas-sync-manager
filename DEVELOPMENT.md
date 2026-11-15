@@ -57,9 +57,12 @@ in English. No new dependency without authorization.
 Locally pnpm; in CI `npm ci`. `package-lock.json` changes only with `pnpm run lock:npm` or the pnpm
 postinstall; `Cargo.lock` only with Cargo. `pnpm run lint` checks the npm lock.
 
-## Shared library
+## Dependencies and shared library
 
-The launcher bridge, styles, shared components and helpers, and the build, package and release scripts come from `@valeriogc/nas-base-app`, published on GitHub Packages; the commands of `package.json` use its `nas-base-app`. The `.npmrc` of the project points the `@valeriogc` scope to its registry; locally a classic token with `read:packages` is needed in your own `~/.npmrc` (`//npm.pkg.github.com/:_authToken=...`), while the pipelines use the token of the workflow. For a new version of the library, update the number in `package.json` and run `pnpm install`. The local `pnpm-workspace.yaml` has `'@valeriogc/nas-base-app': false` under `allowBuilds`.
+Dependencies, lockfiles and the use of `@valeriogc/nas-base-app` follow the section "For the
+applications" of `DEVELOPMENT.md` in nas-base-app. In short, run `pnpm run lock:npm` after
+`pnpm add`, `update` or `remove`, and keep a token with `read:packages` in `~/.npmrc` to install
+the library.
 
 ## Checks
 

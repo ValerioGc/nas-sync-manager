@@ -217,10 +217,8 @@ onUnmounted(() => {
       </button>
     </template>
 
-    <!-- Page header -->
     <PageHeader :section="section" :busy="busy" @refresh="refresh" />
 
-    <!-- Status banners -->
     <div v-if="error" class="status_banner status_banner_error" role="alert">
       <img class="app_icon" :src="errorIcon" alt="" aria-hidden="true" />
       <span class="status_text">
@@ -249,7 +247,6 @@ onUnmounted(() => {
       </span>
     </div>
 
-    <!-- Section content -->
     <SectionContent
       :section="section"
       :loading="loading || Boolean(selected && !detail && !error)"
@@ -268,10 +265,8 @@ onUnmounted(() => {
       @request="(action) => (pending = action)"
     />
 
-    <!-- Settings dialog -->
     <SettingsDialog v-if="settingsOpen" @close="settingsOpen = false" @saved="refresh" />
 
-    <!-- Confirmation dialog -->
     <NasConfirmDialog
       v-if="pending"
       :title="confirmTitle"

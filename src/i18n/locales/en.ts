@@ -79,7 +79,7 @@ export const en = {
   ignores: 'Excluded paths',
   noChanges: 'No recent changes.',
   noConflicts: 'No conflicts.',
-  trashOff: 'The trash of this disk is off: the files the sync deletes are removed for good.',
+  trashOff: 'The trash of this disk is off, so the files the sync deletes are removed for good.',
   noIgnores: 'No excluded path.',
   keepThis: 'Keep current file',
   keepOther: 'Keep conflict copy',

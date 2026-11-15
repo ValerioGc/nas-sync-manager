@@ -72,7 +72,7 @@ impl Failure {
 
 impl From<sqlx::Error> for Failure {
     fn from(error: sqlx::Error) -> Self {
-        eprintln!("Sync database error: {error}");
+        eprintln!("sync database error ({error})");
         Self::new(
             StatusCode::INTERNAL_SERVER_ERROR,
             "Unable to access the sync database",

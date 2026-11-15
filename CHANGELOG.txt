@@ -2,6 +2,12 @@
 
 All notable changes to nas-sync-manager are documented in this file.
 
+## [0.9.2]
+
+### Changed
+
+- Update documentation and improve comments; remove unused launcher-only module feat: integrate nas-app-core as a dependency and update package versions fix: enhance error messages and adjust terminology in UI components.
+
 ## [0.9.1]
 
 ### Fixed
